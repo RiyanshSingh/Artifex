@@ -9,8 +9,8 @@
     "web": {
       "root": "web",
       "framework": "sveltekit",
-      "installCommand": "npm --prefix .. ci",
-      "buildCommand": "npm --prefix .. run build -w web",
+      "installCommand": "cd .. && npm ci",
+      "buildCommand": "cd .. && npm run build -w web",
       "outputDirectory": "build"
     }
   },
