@@ -1,0 +1,86 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "fw.board/1",
+ "title": "Artifex board: one shape for a dataset board, a board measured from a photo and a PCB from the PCB pipeline",
+ "type": "object",
+ "required": ["schema", "id", "name", "source", "frame", "pcb", "components"],
+ "properties": {
+  "schema": { "const": "fw.board/1" },
+  "id": { "type": "string" },
+  "name": { "type": "string" },
+  "aliases": { "type": "array", "items": { "type": "string" }, "description": "silkscreen/chip markings used for identification" },
+  "source": {
+   "type": "object", "required": ["kind"],
+   "properties": {
+    "kind": { "enum": ["dataset", "photo", "pcb", "photo+dataset"] },
+    "urls": { "type": "array", "items": { "type": "string" } },
+    "asset_id": { "type": "string" }, "selection_id": { "type": "string" }, "pcb_job": { "type": "string" },
+    "dataset_id": { "type": "string" }, "checked": { "type": "string" },
+    "calibration": { "type": "object", "description": "photo: how mm were obtained (A4 homography, board's own holes) and its residual" }
+   }
+  },
+  "sources": { "type": "object", "additionalProperties": { "type": "string" }, "description": "src keys -> document URL" },
+  "frame": { "type": "string" },
+  "pcb": {
+   "type": "object", "required": ["outline", "thickness", "holes"],
+   "properties": {
+    "outline": {
+     "oneOf": [
+      { "type": "object", "required": ["kind", "w", "h"], "properties": { "kind": { "const": "rect" }, "w": { "type": "number", "exclusiveMinimum": 0 }, "h": { "type": "number", "exclusiveMinimum": 0 }, "r": { "type": "number", "minimum": 0 }, "src": { "type": "string" }, "verify": { "$ref": "#/$defs/verify" } } },
+      { "type": "object", "required": ["kind", "points", "w", "h"], "properties": { "kind": { "const": "poly" }, "points": { "type": "array", "minItems": 3, "items": { "$ref": "#/$defs/xy" } }, "w": { "type": "number" }, "h": { "type": "number" }, "src": { "type": "string" }, "verify": { "$ref": "#/$defs/verify" } } }
+     ]
+    },
+    "thickness": { "type": "number", "exclusiveMinimum": 0, "maximum": 5 },
+    "holes": { "type": "array", "items": {
+     "type": "object", "required": ["x", "y", "d"],
+     "properties": { "x": { "type": "number" }, "y": { "type": "number" }, "d": { "type": "number", "exclusiveMinimum": 0 }, "plated": { "type": "boolean" }, "use": { "enum": ["mount", "pin", "tooling"] }, "src": { "type": "string" }, "verify": { "$ref": "#/$defs/verify" }, "uncertainty_mm": { "type": "number" } } } }
+   }
+  },
+  "components": { "type": "array", "items": { "$ref": "#/$defs/component" } },
+  "accessories": { "type": "array", "items": { "$ref": "#/$defs/accessory" }, "description": "ready-made modules the fab does not solder: on a header over the board, out on a cable, or loose in the case" },
+  "keepouts": { "type": "array", "items": {
+   "type": "object", "required": ["id", "rect", "rule"],
+   "properties": { "id": { "type": "string" }, "rect": { "type": "array", "items": { "type": "number" }, "minItems": 4, "maxItems": 4 }, "z": { "type": "array", "items": { "type": "number" } }, "rule": { "enum": ["no_metal", "no_material", "airflow", "keep_open"] }, "src": { "type": "string" }, "verify": { "$ref": "#/$defs/verify" }, "note": { "type": "string" } } } },
+  "heights": { "type": "object", "properties": { "top_max": { "type": "number" }, "bottom_max": { "type": "number" } } },
+  "mount": { "type": "object" },
+  "uncertainty_mm": { "type": "number", "description": "default 1-sigma for numbers without their own" }
+ },
+ "$defs": {
+  "xy": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+  "verify": { "type": "array", "items": { "type": "string" }, "description": "fields NOT read from src: estimated, typical or measured with low confidence" },
+  "accessory": {
+   "type": "object", "required": ["id", "mount"],
+   "properties": {
+    "id": { "type": "string" }, "key": { "type": "string" }, "name": { "type": "string" },
+    "kind": { "enum": ["display", "sensor", "probe", "battery", "module"] },
+    "mount": { "enum": ["board", "cable", "inside"], "description": "board: on a header over the PCB (x, y, z0 above its top face); cable: out of the case through a wall at edge/at; inside: loose in the case, placed by it (a LiPo)" },
+    "x": { "type": "number" }, "y": { "type": "number" },
+    "w": { "type": "number", "minimum": 0 }, "d": { "type": "number", "minimum": 0 }, "h": { "type": "number", "minimum": 0 }, "z0": { "type": "number" },
+    "window": { "$ref": "#/$defs/xy", "description": "what must stay visible (a display's glass), centred window_dx, window_dy off the body centre" },
+    "window_dx": { "type": "number" }, "window_dy": { "type": "number" }, "shape": { "enum": ["rect", "round"] },
+    "holes": { "type": "array" },
+    "edge": { "enum": ["+x", "-x", "+y", "-y"] }, "at": { "type": "number" }, "cable_d": { "type": "number", "exclusiveMinimum": 0 },
+    "note": { "type": "string" }
+   }
+  },
+  "component": {
+   "type": "object", "required": ["id", "type", "side", "access", "w", "h"],
+   "properties": {
+    "id": { "type": "string" }, "type": { "type": "string" }, "side": { "enum": ["top", "bottom"] },
+    "access": { "enum": ["port", "press", "light", "sensor", "display", "sound", "key", "cable", "none"], "description": "what the case gives it: a wall window, a press tongue, a lid window (light, sensor, display), a lid grille (sound), a plate and a printed keycap (key)" },
+    "key": { "type": "object", "description": "a mechanical key switch: plate_top, stem_top (mm above the PCB top face), plate_t, cut, travel, stem (mx|choc), cap [w, d]" },
+    "w": { "type": "number", "minimum": 0 }, "h": { "type": "number", "minimum": 0 }, "d": { "type": "number", "minimum": 0 },
+    "edge": { "enum": ["+x", "-x", "+y", "-y"] }, "at": { "type": "number" }, "z0": { "type": "number" }, "protrude": { "type": "number" },
+    "plug": { "oneOf": [{ "$ref": "#/$defs/xy" }, { "type": "null" }] }, "plugR": { "type": "number" },
+    "x": { "type": "number" }, "y": { "type": "number" }, "normal": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+    "window": { "$ref": "#/$defs/xy", "description": "light/sensor/display: the lid opening [w, d] (default w x d + 0.6); sound: the area the grille fills (default w x d)" },
+    "shape": { "enum": ["rect", "round"], "description": "of that opening (round: a TO-5 PIR, a round buzzer)" },
+    "src": { "type": "string" }, "verify": { "$ref": "#/$defs/verify" }, "uncertainty_mm": { "type": "number" }, "note": { "type": "string" },
+    "evidence": { "type": "object", "description": "photo: SAM mask id/score, Spark box; pcb: footprint/ref designator" }
+   },
+   "allOf": [
+    { "if": { "properties": { "access": { "const": "port" } } }, "then": { "required": ["edge", "at", "d", "protrude"] }, "else": { "required": ["x", "y", "d"] } }
+   ]
+  }
+ }
+}

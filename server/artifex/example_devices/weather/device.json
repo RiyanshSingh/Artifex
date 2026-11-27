@@ -1,0 +1,231 @@
+{
+ "schema": "fw.device/1",
+ "title": "Настольная метеостанция OLED",
+ "summary": "Настольная метеостанция: температура, влажность и давление на OLED, кнопка листает экраны",
+ "board": {
+  "holes": true,
+  "w": 46.0,
+  "h": 48.0
+ },
+ "nodes": [
+  {
+   "id": "U1",
+   "kind": "module",
+   "label": "MCU",
+   "module": "113991054",
+   "edge": "+y"
+  },
+  {
+   "id": "U2",
+   "kind": "chip",
+   "label": "BME280 climate sensor",
+   "lcsc": "C92489"
+  },
+  {
+   "id": "C1",
+   "kind": "capacitor",
+   "label": "U2 decoupling",
+   "value": "100nF",
+   "package": "0603"
+  },
+  {
+   "id": "R1",
+   "kind": "resistor",
+   "label": "SDA pull-up",
+   "value": "4.7k",
+   "package": "0603"
+  },
+  {
+   "id": "R2",
+   "kind": "resistor",
+   "label": "SCL pull-up",
+   "value": "4.7k",
+   "package": "0603"
+  },
+  {
+   "id": "DS1",
+   "kind": "accessory",
+   "label": "display",
+   "accessory": "oled_096_i2c",
+   "place": {
+    "x": -3.0,
+    "y": -8.0,
+    "rot": 0.0
+   }
+  },
+  {
+   "id": "SW1",
+   "kind": "button",
+   "label": "page",
+   "place": {
+    "x": 15.0,
+    "y": -14.0,
+    "rot": 0.0
+   }
+  }
+ ],
+ "nets": [
+  {
+   "pins": [
+    "U1.GND",
+    "U2.GND",
+    "U2.SDO",
+    "C1.2",
+    "SW1.B",
+    "DS1.GND"
+   ],
+   "name": "GND"
+  },
+  {
+   "pins": [
+    "U1.V3V3",
+    "U2.VDD",
+    "U2.VDDIO",
+    "U2.CSB",
+    "C1.1",
+    "R1.1",
+    "R2.1",
+    "DS1.VCC"
+   ],
+   "name": "V3V3"
+  },
+  {
+   "pins": [
+    "U1.SDA",
+    "U2.SDI",
+    "R1.2",
+    "DS1.SDA"
+   ],
+   "name": "SDA"
+  },
+  {
+   "pins": [
+    "U1.SCL",
+    "U2.SCK",
+    "R2.2",
+    "DS1.SCL"
+   ],
+   "name": "SCL"
+  },
+  {
+   "pins": [
+    "U1.D1",
+    "SW1.A"
+   ]
+  }
+ ],
+ "requirements": [
+  {
+   "id": "R1",
+   "text": "измерять температуру, влажность и давление",
+   "parts": [
+    "U2"
+   ],
+   "firmware": true,
+   "test": {
+    "expect": [
+     {
+      "at_s": 5,
+      "screen": "C"
+     }
+    ],
+    "given": {},
+    "steps": []
+   }
+  },
+  {
+   "id": "R2",
+   "text": "показывать значения на экране OLED в крышке",
+   "parts": [
+    "DS1"
+   ],
+   "firmware": true,
+   "test": {
+    "expect": [
+     {
+      "at_s": 5,
+      "screen": "C"
+     }
+    ],
+    "given": {},
+    "steps": []
+   }
+  },
+  {
+   "id": "R3",
+   "text": "кнопка листает экраны",
+   "parts": [
+    "SW1"
+   ],
+   "firmware": true,
+   "test": {
+    "expect": [
+     {
+      "at_s": 7,
+      "screen": "hPa"
+     }
+    ],
+    "given": {},
+    "steps": [
+     {
+      "at_s": 6,
+      "press": "SW1"
+     }
+    ]
+   }
+  }
+ ],
+ "concept": {
+  "uses": [
+   "на рабочем столе, питание от USB-зарядника сзади: взгляд на экран прямо, кнопка под рукой",
+   "в спальне ночью: температура и влажность на OLED, одно нажатие листает экраны"
+  ],
+  "options": [
+   {
+    "name": "Desk wedge",
+    "look": "мягкий клин на столе, экран в крышке лицом к человеку",
+    "panel": "OLED по центру крышки, кнопка справа от экрана",
+    "form": "soft",
+    "stance": "tilt",
+    "mounting": "none",
+    "module_edge": "+y",
+    "board": {
+     "shape": "rect",
+     "w": 46.0,
+     "h": 48.0
+    }
+   },
+   {
+    "name": "Upright frame",
+    "look": "вертикальная рамка-картина на подставке 75°",
+    "panel": "OLED по центру, кнопка сбоку",
+    "form": "box",
+    "stance": "upright",
+    "mounting": "none",
+    "module_edge": "+y",
+    "board": {
+     "shape": "rect",
+     "w": 40.0,
+     "h": 55.0
+    }
+   },
+   {
+    "name": "Flat puck",
+    "look": "круглый шайба на столе экраном вверх",
+    "panel": "OLED в центре круга, кнопка рядом",
+    "form": "round",
+    "stance": "desk",
+    "mounting": "none",
+    "module_edge": "+y",
+    "board": {
+     "shape": "round",
+     "w": 44.0,
+     "h": 42.0
+    }
+   }
+  ],
+  "chosen": "Desk wedge",
+  "why": "Наклонная подставка 25° ставит текст прямо к глазам, задняя стенка +y свободна под USB, передняя -y свободна."
+ },
+ "_version": 2
+}

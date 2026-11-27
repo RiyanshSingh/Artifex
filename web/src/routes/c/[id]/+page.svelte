@@ -1,0 +1,110 @@
+<script lang="ts">
+  import { page } from '$app/state';
+  import { apiError, deadline, errorText } from '$lib/api';
+  import { t, toggleLang } from '$lib/i18n.svelte';
+  import Icon from '$lib/components/Icon.svelte';
+  import CaptureTips from '$lib/components/CaptureTips.svelte';
+
+  // Minimal phone capture screen opened from the studio's QR code.
+  const id = $derived(page.params.id!);
+  const token = $derived(page.url.searchParams.get('t'));
+  // a file that failed stays in the list, so it goes again from there without another shot
+  let done = $state<{ kind: string; file: File; ok: boolean; msg?: string }[]>([]);
+  let busy = $state(0);
+
+  async function upload(kind: string, f: File) {
+    busy++;
+    try {
+      const fd = new FormData();
+      fd.append('kind', kind);
+      fd.append('file', f, f.name);
+      const q = token ? `?capture=${encodeURIComponent(token)}` : '';
+      const res = await fetch(`/api/projects/${id}/assets${q}`, {
+        method: 'POST',
+        body: fd,
+        credentials: 'same-origin',
+        headers: token ? { 'X-FW-Capture': token } : {},
+        signal: deadline(300_000),
+      });
+      if (!res.ok) throw await apiError(res);
+      done = [...done, { kind, file: f, ok: true }];
+    } catch (e) {
+      done = [...done, { kind, file: f, ok: false, msg: errorText(e) }];
+    } finally {
+      busy--;
+    }
+  }
+
+  async function send(kind: string, files: FileList | null) {
+    if (!files) return;
+    for (const f of Array.from(files)) await upload(kind, f);
+  }
+
+  function retry(i: number) {
+    const d = done[i];
+    done = done.filter((_, j) => j !== i);
+    upload(d.kind, d.file);
+  }
+</script>
+
+<svelte:head><title>{t('capture_title')} · Artifex</title></svelte:head>
+
+<main class="cap">
+  <div class="top">
+    <strong>Artifex</strong>
+    <button class="btn ghost small" onclick={toggleLang}>{t('lang')}</button>
+  </div>
+  <h1>{t('capture_title')}</h1>
+  <div class="card tipcard"><CaptureTips /></div>
+  <label class="big btn primary">
+    <Icon name="camera" size={20} /> {t('take_photo')}
+    <input class="sr-only" type="file" accept="image/*" capture="environment" onchange={(e) => send('photo', (e.currentTarget as HTMLInputElement).files)} />
+  </label>
+  <label class="big btn">
+    <Icon name="ruler" size={20} /> {t('caliper')}
+    <input class="sr-only" type="file" accept="image/*" capture="environment" onchange={(e) => send('caliper', (e.currentTarget as HTMLInputElement).files)} />
+  </label>
+  <label class="big btn">
+    <Icon name="video" size={20} /> {t('take_video')}
+    <input class="sr-only" type="file" accept="video/*" capture="environment" onchange={(e) => send('video', (e.currentTarget as HTMLInputElement).files)} />
+  </label>
+  {#if busy}<p class="muted">{t('upload')}… ({busy})</p>{/if}
+  {#each done as d, i (i)}
+    <p class={d.ok ? 'ok' : 'err'}>{d.ok ? `✓ ${t(d.kind)} — ${t('uploaded')}` : `✕ ${d.msg}`}{#if !d.ok}{' '}<button class="btn small" onclick={() => retry(i)}>{t('retry')}</button>{/if}</p>
+  {/each}
+  {#if done.some((d) => d.ok)}<p class="muted">{t('capture_done')}</p>{/if}
+</main>
+
+<style>
+  .cap {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  h1 {
+    font-size: var(--text-2xl);
+  }
+  .tipcard {
+    padding: var(--space-4);
+  }
+  .big {
+    min-height: 64px;
+    font-size: var(--text-lg);
+  }
+  .ok {
+    color: var(--primary);
+    margin: 0;
+  }
+  .err {
+    color: var(--error);
+    margin: 0;
+  }
+</style>

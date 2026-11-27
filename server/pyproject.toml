@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "artifex"
+version = "0.1.0"
+description = "Agent that designs printable 3D models from photos, measurements and ideas"
+requires-python = ">=3.12"
+# the text is in ../LICENSE; setuptools cannot package a file outside this folder
+license = "PolyForm-Noncommercial-1.0.0"
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "pydantic-settings",
+  "openai",
+  "httpx",
+  "aiosqlite",
+  "numpy",
+  "opencv-python-headless",
+  "pillow",
+  "scipy",
+  "python-multipart",
+  "meta-sam-parser",
+  "ziglang",
+  "wasmtime",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-asyncio"]
+
+[tool.setuptools.packages.find]
+include = ["artifex*"]
+
+[tool.setuptools.package-data]
+# the Arduino core and library headers the firmware check compiles against (firmware_check.py)
+artifex = ["firmware_stubs/*.h", "firmware_stubs/*/*.h", "firmware_sim/*.cpp"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

@@ -1,0 +1,376 @@
+{
+ "schema": "fw.device/1",
+ "title": "Кухонный таймер",
+ "summary": "Кухонный таймер: OLED, 3 кнопки, зуммер, LiPo",
+ "board": {
+  "holes": true,
+  "w": 70.0
+ },
+ "nodes": [
+  {
+   "id": "U1",
+   "kind": "module",
+   "label": "MCU",
+   "module": "113991054",
+   "edge": "+x"
+  },
+  {
+   "id": "BT1",
+   "kind": "accessory",
+   "label": "батарея",
+   "accessory": "lipo_1s_500"
+  },
+  {
+   "id": "DS1",
+   "kind": "accessory",
+   "label": "экран 0.96 OLED",
+   "accessory": "oled_096_i2c",
+   "place": {
+    "x": -10.0,
+    "y": 10.0,
+    "rot": 0.0
+   }
+  },
+  {
+   "id": "BZ1",
+   "kind": "chip",
+   "label": "зуммер 3В активный",
+   "lcsc": "C781847",
+   "place": {
+    "x": -23.0,
+    "y": -10.0,
+    "rot": 0.0
+   }
+  },
+  {
+   "id": "D1",
+   "kind": "chip",
+   "label": "диод flyback",
+   "lcsc": "C64885"
+  },
+  {
+   "id": "Q1",
+   "kind": "chip",
+   "label": "NPN ключ зуммера",
+   "lcsc": "C2146"
+  },
+  {
+   "id": "R1",
+   "kind": "resistor",
+   "label": "SDA pull-up",
+   "value": "4.7k",
+   "package": "0603"
+  },
+  {
+   "id": "R2",
+   "kind": "resistor",
+   "label": "SCL pull-up",
+   "value": "4.7k",
+   "package": "0603"
+  },
+  {
+   "id": "RB",
+   "kind": "resistor",
+   "label": "база 1k",
+   "value": "1k",
+   "package": "0603"
+  },
+  {
+   "id": "SW1",
+   "kind": "button",
+   "label": "+",
+   "place": {
+    "x": -20.0,
+    "y": -20.0,
+    "rot": 0.0
+   }
+  },
+  {
+   "id": "SW2",
+   "kind": "button",
+   "label": "-",
+   "place": {
+    "x": -6.0,
+    "y": -20.0,
+    "rot": 0.0
+   }
+  },
+  {
+   "id": "SW3",
+   "kind": "button",
+   "label": "старт/стоп",
+   "place": {
+    "x": 10.0,
+    "y": -20.0,
+    "rot": 0.0
+   }
+  }
+ ],
+ "nets": [
+  {
+   "pins": [
+    "U1.GND",
+    "DS1.GND",
+    "SW1.B",
+    "SW2.B",
+    "SW3.B",
+    "Q1.E"
+   ],
+   "name": "GND"
+  },
+  {
+   "pins": [
+    "U1.V3V3",
+    "DS1.VCC",
+    "R1.1",
+    "R2.1",
+    "BZ1.POS",
+    "D1.K"
+   ],
+   "name": "V3V3"
+  },
+  {
+   "pins": [
+    "U1.SDA",
+    "DS1.SDA",
+    "R1.2"
+   ],
+   "name": "SDA"
+  },
+  {
+   "pins": [
+    "U1.SCL",
+    "DS1.SCL",
+    "R2.2"
+   ],
+   "name": "SCL"
+  },
+  {
+   "pins": [
+    "U1.D1",
+    "SW1.A"
+   ]
+  },
+  {
+   "pins": [
+    "U1.D2",
+    "SW2.A"
+   ]
+  },
+  {
+   "pins": [
+    "U1.D3",
+    "SW3.A"
+   ]
+  },
+  {
+   "pins": [
+    "U1.MOSI",
+    "RB.1"
+   ]
+  },
+  {
+   "pins": [
+    "RB.2",
+    "Q1.B"
+   ]
+  },
+  {
+   "pins": [
+    "Q1.C",
+    "BZ1.NEG",
+    "D1.A"
+   ]
+  }
+ ],
+ "requirements": [
+  {
+   "id": "R1",
+   "text": "настройка времени кнопками +/− (короткое нажатие +1 мин, удержание — быстрое изменение)",
+   "parts": [
+    "SW1",
+    "SW2"
+   ],
+   "firmware": true,
+   "test": {
+    "expect": [
+     {
+      "at_s": 5,
+      "screen": "01:00"
+     }
+    ],
+    "given": {},
+    "steps": [
+     {
+      "at_s": 2,
+      "press": "SW1"
+     }
+    ]
+   }
+  },
+  {
+   "id": "R2",
+   "text": "старт/стоп/повтор кнопкой старт, долгое удержание — сброс",
+   "parts": [
+    "SW3"
+   ],
+   "firmware": true,
+   "test": {
+    "expect": [
+     {
+      "from_s": 6,
+      "screen": "00:57",
+      "to_s": 9
+     }
+    ],
+    "given": {},
+    "steps": [
+     {
+      "at_s": 2,
+      "press": "SW1"
+     },
+     {
+      "at_s": 4,
+      "press": "SW3"
+     }
+    ]
+   }
+  },
+  {
+   "id": "R3",
+   "text": "обратный отсчёт ММ:СС на OLED",
+   "parts": [
+    "DS1"
+   ],
+   "firmware": true,
+   "test": {
+    "expect": [
+     {
+      "from_s": 6,
+      "screen": "00:57",
+      "to_s": 9
+     }
+    ],
+    "given": {},
+    "steps": [
+     {
+      "at_s": 2,
+      "press": "SW1"
+     },
+     {
+      "at_s": 4,
+      "press": "SW3"
+     }
+    ]
+   }
+  },
+  {
+   "id": "R4",
+   "text": "громкий прерывистый сигнал по окончании 60 с, стоп любой кнопкой",
+   "parts": [
+    "BZ1",
+    "Q1"
+   ],
+   "firmware": true,
+   "test": {
+    "expect": [
+     {
+      "from_s": 65,
+      "output": "BZ1",
+      "to_s": 70,
+      "on": true
+     }
+    ],
+    "given": {},
+    "steps": [
+     {
+      "at_s": 2,
+      "press": "SW1"
+     },
+     {
+      "at_s": 4,
+      "press": "SW3"
+     }
+    ]
+   }
+  },
+  {
+   "id": "R5",
+   "text": "работа от LiPo с зарядкой от USB-C модуля",
+   "parts": [
+    "BT1",
+    "U1"
+   ],
+   "firmware": false
+  }
+ ],
+ "concept": {
+  "uses": [
+   "на столешнице у плиты, питание от LiPo и зарядка по USB: повар видит обратный отсчёт на OLED и слышит сигнал",
+   "на полке: установка минут одной рукой кнопками +/−, старт одной кнопкой старт/стоп",
+   "на кухонном столе рядом с плитой: громкий сигнал 2.8 кГц 60 секунд, остановка любой кнопкой"
+  ],
+  "options": [
+   {
+    "name": "Наклонный клин",
+    "look": "небольшой клин на столе, экран к повару, три кнопки под ним",
+    "panel": "OLED по центру верха, ряд из трёх кнопок +/−/старт под ним, зуммер сбоку с решёткой",
+    "form": "soft",
+    "stance": "tilt",
+    "mounting": "none",
+    "module_edge": "+x",
+    "board": {
+     "shape": "rect",
+     "w": 70.0,
+     "h": 60.0
+    }
+   },
+   {
+    "name": "Шайба на холодильник",
+    "look": "круглая шайба на магните холодильника на уровне глаз",
+    "panel": "экран в центре круга, три кнопки дугой снизу, зуммер сзади",
+    "form": "round",
+    "stance": "wall",
+    "mounting": "magnets",
+    "module_edge": "-y",
+    "board": {
+     "shape": "round",
+     "w": 48.0,
+     "h": 48.0
+    }
+   },
+   {
+    "name": "Брусок в руку",
+    "look": "компактный брусок в руке с кнопками под пальцами",
+    "panel": "экран сверху, кнопки в ряд сбоку, зуммер на торце",
+    "form": "soft",
+    "stance": "hand",
+    "mounting": "none",
+    "module_edge": "-y",
+    "board": {
+     "shape": "rounded",
+     "w": 40.0,
+     "h": 55.0
+    }
+   }
+  ],
+  "chosen": "Наклонный клин",
+  "why": "Клин стоит под углом экраном к повару — видно издалека, кнопки доступны."
+ },
+ "firmware": {
+  "lang": "arduino",
+  "files": {
+   "kitchen_timer.ino": "#include <Wire.h>\n#include <Adafruit_GFX.h>\n#include <Adafruit_SSD1306.h>\n\n#define PIN_PLUS  D1\n#define PIN_MINUS D2\n#define PIN_START D3\n#define PIN_BUZZ  D10\n\n#define SCREEN_W 128\n#define SCREEN_H 64\nAdafruit_SSD1306 display(SCREEN_W, SCREEN_H, &Wire, -1);\n\nlong setSeconds = 0;\nlong remainMs = 0;\nbool running = false;\nbool ringing = false;\nunsigned long ringStart = 0;\nunsigned long lastTick = 0;\n\nstruct Btn { int pin; bool last; unsigned long downT; unsigned long lastRep; };\nBtn bPlus{PIN_PLUS,false,0,0}, bMinus{PIN_MINUS,false,0,0}, bStart{PIN_START,false,0,0};\n\nbool pressedEdge(Btn &b) {\n  bool now = (digitalRead(b.pin) == LOW);\n  bool edge = (now && !b.last);\n  if (edge) { b.downT = millis(); b.lastRep = millis(); }\n  b.last = now;\n  return edge;\n}\nbool heldRepeat(Btn &b, unsigned long interval) {\n  bool now = (digitalRead(b.pin) == LOW);\n  if (now && millis() - b.downT > 500 && millis() - b.lastRep > interval) {\n    b.lastRep = millis();\n    return true;\n  }\n  return false;\n}\n\nvoid showDisplay() {\n  long s = running ? (remainMs + 999) / 1000 : setSeconds;\n  if (s < 0) s = 0;\n  char buf[6];\n  snprintf(buf, sizeof(buf), \"%02ld:%02ld\", s / 60, s % 60);\n  display.clearDisplay();\n  display.setTextColor(SSD1306_WHITE);\n  display.setTextSize(3);\n  display.setCursor(20, 12);\n  display.print(buf);\n  display.setTextSize(1);\n  display.setCursor(8, 52);\n  if (ringing) display.print(\"STOP: knopka\");\n  else if (running) display.print(\"START: pauza\");\n  else display.print(\"+/- minut START pusk\");\n  display.display();\n}\nvoid stopRing() { ringing = false; digitalWrite(PIN_BUZZ, LOW); }\n\nvoid setup() {\n  pinMode(PIN_PLUS, INPUT_PULLUP);\n  pinMode(PIN_MINUS, INPUT_PULLUP);\n  pinMode(PIN_START, INPUT_PULLUP);\n  pinMode(PIN_BUZZ, OUTPUT);\n  digitalWrite(PIN_BUZZ, LOW);\n  Wire.begin();\n  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);\n  display.setRotation(0);\n  showDisplay();\n}\n\nvoid loop() {\n  bool ePlus = pressedEdge(bPlus);\n  bool eMinus = pressedEdge(bMinus);\n  bool eStart = pressedEdge(bStart);\n  bool repPlus = heldRepeat(bPlus, 120);\n  bool repMinus = heldRepeat(bMinus, 120);\n  if (ringing) {\n    digitalWrite(PIN_BUZZ, ((millis() / 400) % 2 == 0) ? HIGH : LOW);\n    if (ePlus || eMinus || eStart) stopRing();\n    if (millis() - ringStart > 60000) stopRing();\n    showDisplay(); delay(20); return;\n  }\n  if (!running) {\n    if (ePlus || repPlus) { setSeconds += 60; if (setSeconds > 99*60+59) setSeconds = 99*60+59; showDisplay(); }\n    if (eMinus || repMinus) { setSeconds -= 60; if (setSeconds < 0) setSeconds = 10*60; showDisplay(); }\n    if (eStart) {\n      if (setSeconds <= 0) setSeconds = 60;\n      running = true; remainMs = setSeconds * 1000L; lastTick = millis(); showDisplay();\n    }\n    if ((digitalRead(PIN_START) == LOW) && (millis() - bStart.downT > 1200) && setSeconds > 0) {\n      setSeconds = 0; running = false; showDisplay(); delay(300); bStart.downT = millis();\n    }\n  } else {\n    unsigned long now = millis();\n    remainMs -= (long)(now - lastTick);\n    lastTick = now;\n    if (remainMs <= 0) { remainMs = 0; running = false; setSeconds = 0; ringing = true; ringStart = millis(); }\n    if (eStart) { running = false; setSeconds = (remainMs + 999) / 1000; digitalWrite(PIN_BUZZ, LOW); }\n    if (ePlus) remainMs += 60000;\n    if (eMinus) { remainMs -= 60000; if (remainMs < 0) remainMs = 0; }\n    showDisplay();\n  }\n  delay(20);\n}\n"
+  },
+  "notes": "Плата Seeed XIAO ESP32-C3. Библиотеки: Adafruit GFX, Adafruit SSD1306. В Arduino IDE выбрать XIAO_ESP32C3, прошить по USB-C.",
+  "check": {
+   "ok": true,
+   "tool": "g++ 13.2.0 compile, no link (arduino-esp32 3.x stubs, Seeed ",
+   "errors": [],
+   "warnings": [],
+   "wiring": "d42213a52cf9c9d2",
+   "asks": "931752cfbaf1"
+  }
+ },
+ "_version": 16
+}
