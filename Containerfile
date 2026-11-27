@@ -33,9 +33,10 @@ ARG ORCA_APPIMAGE_URL=""
 # what the extracted AppImage loads from the host (its own check names libopengl0 and libglu1-mesa); no FUSE is needed.
 # g++: the firmware check compiles each device's sketch against the stub Arduino headers (firmware_check.py; no link)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl ffmpeg xvfb xauth libgl1 libegl1 libopengl0 libglu1-mesa libglib2.0-0t64 libgtk-3-0t64 \
+      ca-certificates curl ffmpeg xvfb xauth libcap2-bin libgl1 libegl1 libopengl0 libglu1-mesa libglib2.0-0t64 libgtk-3-0t64 \
       libwebkit2gtk-4.1-0 libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 file g++ \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && (setcap 'cap_net_bind_service=+ep' "$(readlink -f "$(command -v python)")" || true)
 COPY --from=web /usr/local/bin/node /usr/local/bin/node
 RUN if [ -n "$ORCA_APPIMAGE_URL" ]; then \
       curl -fsSL "$ORCA_APPIMAGE_URL" -o /tmp/orca.AppImage && chmod +x /tmp/orca.AppImage && \
@@ -58,7 +59,6 @@ COPY --from=pcb /app/packages/pcb/dist packages/pcb/dist
 COPY --from=web /app/web/build web/build
 COPY LICENSE ./
 RUN useradd -m fw && mkdir -p /app/data && chown -R fw /app/data
-USER fw
 WORKDIR /app/server
 # Client addresses (the per-address cap for anonymous visitors) come from X-Forwarded-For, read by the server itself
 # (app.client_ip): it takes the entry FW_PROXY_HOPS places from the right, the one the nearest proxy of ours appended,
@@ -72,5 +72,5 @@ WORKDIR /app/server
 # network. Never "*": a forged header would then set the scheme, and uvicorn would pick the visitor-written entry.
 ENV FW_PROXY_HOPS=1 FORWARDED_ALLOW_IPS="127.0.0.1,172.16.0.0/12,10.0.0.0/8,192.168.0.0/16"
 EXPOSE 8000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 CMD curl -fs http://localhost:8000/api/examples >/dev/null || exit 1
-CMD ["python", "-m", "uvicorn", "artifex.app:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 CMD curl -fs "http://localhost:${PORT:-8000}/api/examples" >/dev/null || exit 1
+CMD ["sh", "-c", "p=\"${PORT:-8000}\"; uid=$(id -u fw); gid=$(id -g fw); if [ \"$p\" -ge 1024 ] 2>/dev/null || PORT=\"$p\" setpriv --reuid=\"$uid\" --regid=\"$gid\" --clear-groups -- python -c \"import os,socket; s=socket.socket(); s.bind(('0.0.0.0', int(os.environ['PORT']))); s.close()\" 2>/dev/null; then exec setpriv --reuid=\"$uid\" --regid=\"$gid\" --clear-groups -- python -m uvicorn artifex.app:app --host 0.0.0.0 --port \"$p\" --proxy-headers; fi; exec python -m uvicorn artifex.app:app --host 0.0.0.0 --port \"$p\" --proxy-headers"]
